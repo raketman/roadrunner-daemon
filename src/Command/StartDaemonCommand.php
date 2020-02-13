@@ -13,7 +13,6 @@ use Psr\Log\LoggerInterface;
 
 use Symfony\Component\Process\Process;
 use Symfony\Component\Yaml\Parser;
-use Symfony\Component\Yaml\Exception\ParseException;
 
 class StartDaemonCommand extends Command
 {

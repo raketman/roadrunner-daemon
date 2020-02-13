@@ -40,3 +40,17 @@ php bin/console raketman:roadrunner:daemon path_to_config
 ```
 php vendor/raketman/roadrunner-daemon/example/bin/application.php raketman:roadrunner:daemon vendor/raketman/roadrunner-daemon/example/config/example.yaml 
 ```
+
+
+
+
+Также необходимо учитывать автозагрузку psr-4
+
+```
+"autoload": {
+        "psr-4": {
+            "App\\": "src/",
+            "Raketman\\RoadrunnerDaemon\\": "vendor/raketman/roadrunner-daemon/src"
+        }
+    },
+```
