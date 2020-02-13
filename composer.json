@@ -1,0 +1,23 @@
+{
+  "name": "raketman/roadrunner-daemon",
+  "version": "1.0.0",
+  "description": "Daemon for roadrunner",
+  "keywords": ["roadrunner", "daemon"],
+  "type": "symfony-bundle",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Raketman",
+      "email": "raketmandevelop@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": { "Raketman\\RoadrunnerDaemon\\": "" }
+  },
+  "require": {
+    "php": ">=7.1",
+    "psr/log": "^1.0",
+    "symfony/console": "~2.8|~3.4|~4.0",
+    "ext-json": "*"
+  }
+}

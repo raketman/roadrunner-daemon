@@ -1,0 +1,11 @@
+rpc:
+    enable: false
+http:
+    address: :9502
+    maxRequestSize: 1024
+    workers:
+        command: /usr/local/bin/php /var/www/app/vendor/raketman/roadrunner-daemon/example/roadrunner.php
+        pool:
+            numWorkers: 2
+            maxJobs:  500
+
