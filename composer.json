@@ -20,6 +20,7 @@
     "symfony/console": "~2.8|~3.4|~4.0",
     "symfony/process": "^2.8|^3.4|^4.0",
     "symfony/yaml": "~2.8|~3.4|~4.0",
-    "spiral/roadrunner": "^1.5"
+    "spiral/roadrunner": "^1.5",
+    "symfony/psr-http-message-bridge": "^1.2"
   }
 }
