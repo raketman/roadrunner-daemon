@@ -12,7 +12,7 @@
     }
   ],
   "autoload": {
-    "psr-4": { "Raketman\\RoadrunnerDaemon\\": "" }
+    "psr-4": { "Raketman\\RoadrunnerDaemon\\": "src/" }
   },
   "require": {
     "php": ">=7.1",
