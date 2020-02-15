@@ -8,7 +8,7 @@ sleep: 100 # время в микросекундах, которое трати
 ```
 
 Пример запуска можно посмотреть на example/bin/application.php
-А также на сайте офф документации https://roadrunner.dev/docs/php-worker
+Про создание воркера прочитать документацию https://roadrunner.dev/docs/php-worker
 
 
 Для  подключения в проект symfony вам надо:
