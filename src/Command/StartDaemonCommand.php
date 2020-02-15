@@ -313,7 +313,7 @@ class StartDaemonCommand extends Command
             try {
                 $command = sprintf(__DIR__ . '/../Utils/rr serve -c %s', $pool);
 
-                $this->processList[$key] = new Process(explode(' ',$command));
+                $this->processList[$key] = new Process($command);
                 $this->logger->debug("Process {$key} appended to list");
             } catch (\Exception $e) {
                 $this->logger->critical("Exception caught during process creating", [
