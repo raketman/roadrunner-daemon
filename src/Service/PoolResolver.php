@@ -8,10 +8,12 @@ use RecursiveIteratorIterator;
 class PoolResolver implements PoolResolverInterface
 {
     protected $poolPath;
+    protected $updateInterval;
 
-    public function __construct($poolPath)
+    public function __construct($poolPath, $updateInterval = 60)
     {
         $this->poolPath = $poolPath;
+        $this->updateInterval = $updateInterval;
     }
 
     public function getPools()
@@ -36,6 +38,6 @@ class PoolResolver implements PoolResolverInterface
 
     public function revisionInterval()
     {
-        return 5;
+        return $this->updateInterval;
     }
 }
