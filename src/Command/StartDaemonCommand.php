@@ -81,7 +81,7 @@ class StartDaemonCommand extends Command
             ->addArgument('action', InputArgument::REQUIRED, 'start|stop')
             ->addArgument('config', InputArgument::REQUIRED, 'Файл с конфигурацией необходимых процессов')
 
-            ->addOption('daemonize', null, InputOption::VALUE_OPTIONAL, 'Запуститьв режиме демона', true)
+            //->addOption('daemonize', null, InputOption::VALUE_OPTIONAL, 'Запуститьв режиме демона', true)
             ->addOption('max-execution-time', null, InputOption::VALUE_REQUIRED, 'Максимальное время выполнения команды в секундах', null)
             ->addOption('pid-file', null, InputOption::VALUE_REQUIRED, 'PID файл', null)
             ->addOption('lock-by-pid', null, InputOption::VALUE_OPTIONAL, 'Блокировка по PID', false)
@@ -106,9 +106,9 @@ class StartDaemonCommand extends Command
         }
 
 
-        if ($input->getOption('daemonize')) {
-            $this->daemonize();
-        }
+//        if ($input->getOption('daemonize')) {
+//            $this->daemonize();
+//        }
 
         register_shutdown_function([$this, 'shutdownFunction']);
 
