@@ -78,7 +78,7 @@ class StartDaemonCommand extends Command
         parent::configure();
         $this->setName('raketman:roadrunner:daemon')
             ->setDescription('Запускает демон, который запустит и будет следить за исполнением сконфигурированных фоновых процессов')
-            ->addArgument('command', InputArgument::REQUIRED, 'start|stop')
+            ->addArgument('action', InputArgument::REQUIRED, 'start|stop')
             ->addArgument('config', InputArgument::REQUIRED, 'Файл с конфигурацией необходимых процессов')
 
             ->addOption('daemonize', null, InputOption::VALUE_OPTIONAL, 'Запуститьв режиме демона', false)
@@ -94,7 +94,7 @@ class StartDaemonCommand extends Command
         // прочитать конфигурацию
         $this->readConfigFile($input);
 
-        if ($input->getArgument('config') === 'stop') {
+        if ($input->getArgument('action') === 'stop') {
             // Удалим pid
             if (file_exists($this->pidPath)) {
                 $this->logger->info("Delete pid file " . $this->pidPath);
