@@ -78,8 +78,10 @@ class StartDaemonCommand extends Command
         parent::configure();
         $this->setName('raketman:roadrunner:daemon')
             ->setDescription('Запускает демон, который запустит и будет следить за исполнением сконфигурированных фоновых процессов')
+            ->addArgument('command', InputArgument::REQUIRED, 'start|stop')
             ->addArgument('config', InputArgument::REQUIRED, 'Файл с конфигурацией необходимых процессов')
 
+            ->addOption('daemonize', null, InputOption::VALUE_OPTIONAL, 'Запуститьв режиме демона', false)
             ->addOption('max-execution-time', null, InputOption::VALUE_REQUIRED, 'Максимальное время выполнения команды в секундах', null)
             ->addOption('pid-file', null, InputOption::VALUE_REQUIRED, 'PID файл', null)
             ->addOption('lock-by-pid', null, InputOption::VALUE_OPTIONAL, 'Блокировка по PID', false)
@@ -89,13 +91,30 @@ class StartDaemonCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        // прочитать конфигурацию
+        $this->readConfigFile($input);
+
+        if ($input->getArgument('config') === 'stop') {
+            // Удалим pid
+            if (file_exists($this->pidPath)) {
+                $this->logger->info("Delete pid file " . $this->pidPath);
+                unlink($this->pidPath);
+            }
+
+            $this->logger->info("Success stop daemon");
+            exit;
+        }
+
+
+        if ($input->getOption('daemonize')) {
+            $this->daemonize();
+        }
+
         register_shutdown_function([$this, 'shutdownFunction']);
 
         $poolListRevisionInterval = $this->poolsResolver->revisionInterval();
         $poolListNextRevision = $poolListRevisionInterval;
 
-        // прочитать конфигурацию
-        $this->readConfigFile($input);
 
         $this->executionTime    = 0;
         $startTime              = time();
@@ -467,6 +486,25 @@ class StartDaemonCommand extends Command
 
             default:
                 break;
+        }
+    }
+
+
+    /**
+     * Daemonize current process
+     *
+     * @return void
+     */
+    protected function daemonize() {
+        if (($pid = pcntl_fork()) == -1) {
+            new \Exception('Daemonize not working');
+        } elseif ($pid) {
+            $this->logger->info('Exit parent process');
+            exit;
+        } else {
+            $this->logger->info('Start daemonize process');
+            // setup this process as session leader
+            posix_setsid();
         }
     }
 }
