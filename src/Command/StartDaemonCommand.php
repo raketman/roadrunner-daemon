@@ -127,8 +127,10 @@ class StartDaemonCommand extends Command
             return;
         }
 
-        // Подождем, чтобы уже запущенный демон наверняка обнаружил отсутствие lock файла и завершил работу
-        sleep(5);
+        if ($this->lockByPid) {
+            // Подождем, чтобы уже запущенный демон наверняка обнаружил отсутствие lock файла и завершил работу
+            sleep(5);
+        }
 
         // Пробуем создать pid-файл
         if ( ! $this->createPidFile($output)) {
