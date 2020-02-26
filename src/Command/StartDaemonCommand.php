@@ -168,7 +168,7 @@ class StartDaemonCommand extends Command
         $this->logger->debug("Backgroud processes started");
 
         // Контролируем выполнение дочерних процессов
-        while ($this->executionTime < $this->maxExecutionTime && file_exists($this->pidPath)) {
+        while (file_exists($this->pidPath)) {
 
             // Проверим состояние фоновых процессов,
             // при необходимости перезапустим
