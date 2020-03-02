@@ -2,15 +2,13 @@
 
 namespace Raketman\RoadrunnerDaemon\Service;
 
+use Raketman\RoadrunnerDaemon\Structure\Pool;
+
 interface PoolResolverInterface
 {
+
     /**
-     * @return array [
-     *      $key1 => $command1
-     *      $key2 => $command2
-     * ], где $key - уникальный хэш команды, по которому будет идти отслеживание скрипта
-     *    измениться $key, скрипт убьет процесси запустит новый, это нужно для того, чтобы имелась
-     *    возможность динамически менять/добавлять/удалять пулы
+     * @return Pool[]
      */
     public function getPools();
 
@@ -19,4 +17,10 @@ interface PoolResolverInterface
      * @return mixed
      */
     public function revisionInterval();
+
+    /**
+     * Периодичность обновления воркеров в пулах
+     * @return mixed
+     */
+    public function resetWorkerInterval();
 }

@@ -2,6 +2,7 @@
 
 namespace Raketman\RoadrunnerDaemon\Service;
 
+use Raketman\RoadrunnerDaemon\Structure\Pool;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -9,11 +10,13 @@ class PoolResolver implements PoolResolverInterface
 {
     protected $poolPath;
     protected $updateInterval;
+    protected $rwInterval;
 
-    public function __construct($poolPath, $updateInterval = 60)
+    public function __construct($poolPath, $updateInterval = 60, $rwInterval = 14400)
     {
         $this->poolPath = $poolPath;
         $this->updateInterval = $updateInterval;
+        $this->rwInterval = $rwInterval;
     }
 
     public function getPools()
@@ -27,17 +30,29 @@ class PoolResolver implements PoolResolverInterface
             // Нас интересуют только файлы
             if (is_file($currentFilePath)) {
                 $key = md5(file_get_contents($currentFilePath));
-                $result[$key] = $currentFilePath;
+
+                // Спас
+                $config = Yaml::Parse(file_get_contents($currentFilePath));
+
+                // По умолчанию rpc включен
+                $isRpc = !isset($config['rpc']) || $config['rpc'];
+                $result[$key] = new Pool($key, $currentFilePath, $isRpc);
             }
 
             $directoryIterator->next();
         }
 
-        return $result;
+        return array_values($result);
     }
 
     public function revisionInterval()
     {
         return $this->updateInterval;
+    }
+
+
+    public function resetWorkerInterval()
+    {
+        $this->rwInterval;
     }
 }

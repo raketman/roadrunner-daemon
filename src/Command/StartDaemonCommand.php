@@ -3,6 +3,7 @@ declare(ticks = 1);
 namespace Raketman\RoadrunnerDaemon\Command;
 
 use Raketman\RoadrunnerDaemon\Service\PoolResolverInterface;
+use Raketman\RoadrunnerDaemon\Structure\BackgroundProcess;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
@@ -81,7 +82,6 @@ class StartDaemonCommand extends Command
             ->addArgument('action', InputArgument::REQUIRED, 'start|stop')
             ->addArgument('config', InputArgument::REQUIRED, 'Файл с конфигурацией необходимых процессов')
 
-            //->addOption('daemonize', null, InputOption::VALUE_OPTIONAL, 'Запуститьв режиме демона', true)
             ->addOption('max-execution-time', null, InputOption::VALUE_REQUIRED, 'Максимальное время выполнения команды в секундах', null)
             ->addOption('pid-file', null, InputOption::VALUE_REQUIRED, 'PID файл', null)
             ->addOption('lock-by-pid', null, InputOption::VALUE_OPTIONAL, 'Блокировка по PID', false)
@@ -105,10 +105,6 @@ class StartDaemonCommand extends Command
             exit;
         }
 
-
-//        if ($input->getOption('daemonize')) {
-//            $this->daemonize();
-//        }
 
         register_shutdown_function([$this, 'shutdownFunction']);
 
@@ -201,6 +197,9 @@ class StartDaemonCommand extends Command
                 usleep($this->usleepDelay);
             }
 
+            // перезапустим воркеры
+
+
             // Проведем ревизию обработчиков
             if ($poolListNextRevision < $this->executionTime) {
                 // Проведем ревизию списка
@@ -291,9 +290,7 @@ class StartDaemonCommand extends Command
 
         $o = $p->getIncrementalOutput();
         $e = $p->getIncrementalErrorOutput();
-        $io = $p->getOutput();
-        $ie = $p->getErrorOutput();
-        if ($o || $e || $io || $ie) {
+        if ($o || $e) {
             $p->clearOutput();
             $p->clearErrorOutput();
             $this->logger->warning("Process output", [
@@ -301,8 +298,6 @@ class StartDaemonCommand extends Command
                 'command' => $p->getCommandLine(),
                 'output' => $o,
                 'err_output' => $e,
-                'ioutput' => $io,
-                'ierr_output' => $ie
             ]);
         }
     }
@@ -312,6 +307,9 @@ class StartDaemonCommand extends Command
      */
     protected function poolListRevision()
     {
+        // TODO: вместо отключение/включения изменнных делать reset в случае rpc. Если rpc нет, то просто убиваьть
+        // TODO: придется различать изменные
+
         $pools = $this->poolsResolver->getPools();
 
         $this->logger->info('pool-list', $pools);
@@ -320,22 +318,25 @@ class StartDaemonCommand extends Command
 
         $this->logger->info('pool-current-list', $processedPoolKeys);
 
-        foreach ($pools as $key => $pool) {
-            $processedPoolKeys = array_filter($processedPoolKeys, function($value) use ($key) {
-                return $value != $key;
+        foreach ($pools as $pool) {
+            $processedPoolKeys = array_filter($processedPoolKeys, function($value) use ($pool) {
+                return $value != $pool->getKey();
             });
             // Если есть в списке, то идем дальше
-            if (isset( $this->processList[$key])) {
+            if (isset( $this->processList[$pool->getKey()])) {
                 continue;
             }
 
-            $this->logger->debug("Iterating $key pool", ['pool' => $pool]);
+            $this->logger->debug("Iterating {$pool->getKey()} pool", ['pool' => $pool]);
 
             try {
-                $command = sprintf(__DIR__ . '/../Utils/rr serve -c %s', $pool);
+                $command = sprintf(__DIR__ . '/../Utils/rr serve -c %s', $pool->getConfigPath());
 
-                $this->processList[$key] = new Process($command);
-                $this->logger->debug("Process {$key} appended to list");
+                $process = new BackgroundProcess($command);
+                $process->setPool($pool);
+
+                $this->processList[$pool->getKey()] = $process;
+                $this->logger->debug("Process {$pool->getKey()} appended to list");
             } catch (\Exception $e) {
                 $this->logger->critical("Exception caught during process creating", [
                     'task' => $pool,
@@ -491,30 +492,4 @@ class StartDaemonCommand extends Command
         }
     }
 
-
-    /**
-     * Daemonize current process
-     *
-     * @return void
-     */
-    protected function daemonize() {
-        if (($pid = pcntl_fork()) == -1) {
-            new \Exception('Daemonize not working');
-        } elseif ($pid) {
-            $this->logger->info('Exit parent process');
-            exit;
-        } else {
-            $this->logger->info('Start daemonize process');
-            // setup this process as session leader
-            posix_setsid();
-
-            fclose(STDIN);
-            fclose(STDOUT);
-            fclose(STDERR);
-
-            $STDIN = fopen('/dev/null', 'r');
-            $STDOUT = fopen('/dev/null', 'wb');
-            $STDERR = fopen('/dev/null', 'wb');
-        }
-    }
 }
