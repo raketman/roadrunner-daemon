@@ -5,6 +5,7 @@ namespace Raketman\RoadrunnerDaemon\Service;
 use Raketman\RoadrunnerDaemon\Structure\Pool;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Symfony\Component\Yaml\Parser;
 
 class PoolResolver implements PoolResolverInterface
 {
@@ -22,6 +23,7 @@ class PoolResolver implements PoolResolverInterface
     public function getPools()
     {
         $result = [];
+        $parser= new Parser();
 
         // Проверим наличие класса в директориях каталога с классами
         $directoryIterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->poolPath));
@@ -32,7 +34,7 @@ class PoolResolver implements PoolResolverInterface
                 $key = md5(file_get_contents($currentFilePath));
 
                 // Спас
-                $config = Yaml::Parse(file_get_contents($currentFilePath));
+                $config = $parser->parse(file_get_contents($currentFilePath));
 
                 // По умолчанию rpc включен
                 $isRpc = !isset($config['rpc']) || $config['rpc'];
