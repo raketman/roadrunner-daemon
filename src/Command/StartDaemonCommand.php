@@ -48,6 +48,10 @@ class StartDaemonCommand extends Command
 
     protected $lockByPid;
 
+    protected $debug;
+
+    protected $verbose;
+
     /**
      * @param LoggerInterface $logger
      */
@@ -91,6 +95,9 @@ class StartDaemonCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->debug = !$input->getOption('no-debug');
+        $this->verbose = !!$input->getOption('verbose');
+
         // прочитать конфигурацию
         $this->readConfigFile($input);
 
@@ -330,7 +337,13 @@ class StartDaemonCommand extends Command
             $this->logger->debug("Iterating {$pool->getKey()} pool", ['pool' => $pool]);
 
             try {
-                $command = sprintf(__DIR__ . '/../Utils/rr serve -c %s', $pool->getConfigPath());
+                $command = sprintf(
+                     '%s/../Utils/rr serve %s %s -l json -c %s',
+                    __DIR__,
+                    $this->debug ? '-d' : '',
+                    $this->verbose ? '-v' : '',
+                    $pool->getConfigPath()
+                );
 
                 $process = new BackgroundProcess($command);
                 $process->setPool($pool);
