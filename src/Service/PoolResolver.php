@@ -55,6 +55,6 @@ class PoolResolver implements PoolResolverInterface
 
     public function resetWorkerInterval()
     {
-        $this->rwInterval;
+        return $this->rwInterval;
     }
 }

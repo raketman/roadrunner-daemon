@@ -29,5 +29,26 @@ class BackgroundProcess extends Process
         $this->pool = $pool;
     }
 
+    public function run($callback = null)
+    {
+        $this->lastResetTime = time(); // Фиксируем время старта
+        return parent::run($callback);
+    }
 
+    /**
+     * @return null
+     */
+    public function getLastResetTime()
+    {
+        return $this->lastResetTime;
+    }
+
+    /**
+     * @param null $lastResetTime
+     */
+    public function setLastResetTime($lastResetTime)
+    {
+        $this->lastResetTime = $lastResetTime;
+    }
+    
 }

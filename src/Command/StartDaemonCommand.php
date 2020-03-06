@@ -37,7 +37,7 @@ class StartDaemonCommand extends Command
     /** @var PoolResolverInterface */
     protected $poolsResolver;
 
-    /** @var Process[] */
+    /** @var BackgroundProcess[] */
     protected $processList = [];
 
     /** @var \Psr\Log\LoggerInterface */
@@ -187,7 +187,6 @@ class StartDaemonCommand extends Command
                     if (255 !== $p->getExitCode()) {
                         $this->logger->debug("Process $key isn't running, going to start again");
                     } else {
-                        // TODO: спорно, может залогировать несколько ошибко подряд
                         $this->logger->critical("Background process $key failed!", [
                             'command' => $p->getCommandLine(),
                             'exit_code' => $p->getExitCode(),
@@ -314,9 +313,6 @@ class StartDaemonCommand extends Command
      */
     protected function poolListRevision()
     {
-        // TODO: вместо отключение/включения изменнных делать reset в случае rpc. Если rpc нет, то просто убиваьть
-        // TODO: придется различать изменные
-
         $pools = $this->poolsResolver->getPools();
 
         $this->logger->info('pool-list', $pools);
@@ -363,6 +359,28 @@ class StartDaemonCommand extends Command
             $this->logger->debug("Process {$poolKey} stoped");
             $this->processList[$poolKey]->stop();
             unset($this->processList[$poolKey]);
+        }
+
+        // TODO: вместо отключение/включения изменнных делать reset в случае rpc. Если rpc нет, то просто убиваьть
+        foreach ($this->processList as $process) {
+            if (!$process->getPool()->isRpc()) {
+                continue;
+            }
+
+            if (time() > ($process->getLastResetTime() + $this->poolsResolver->resetWorkerInterval())) {
+                $this->logger->info(sprintf("Reset pool %s", $process->getPool()->getConfigPath()));
+
+                // перезагрузим воркеры
+                $command = sprintf(
+                    '%s/../Utils/rr http:reset -c %s',
+                    __DIR__,
+                    $pool->getConfigPath()
+                );
+
+                (new Process($command))->run();
+
+                $process->setLastResetTime(time());
+            }
         }
     }
 
