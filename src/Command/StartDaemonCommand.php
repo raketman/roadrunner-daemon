@@ -334,7 +334,7 @@ class StartDaemonCommand extends Command
 
             try {
                 $command = sprintf(
-                     '%s/../Utils/rr serve %s %s -l json -c %s',
+                     '%s/../../roadrunner/rr serve %s %s -l json -c %s',
                     __DIR__,
                     $this->debug ? '-d' : '',
                     $this->verbose ? '-v' : '',
@@ -372,7 +372,7 @@ class StartDaemonCommand extends Command
 
                 // перезагрузим воркеры
                 $command = sprintf(
-                    '%s/../Utils/rr http:reset -c %s',
+                    '%s/../../roadrunner/rr http:reset -c %s',
                     __DIR__,
                     $pool->getConfigPath()
                 );
