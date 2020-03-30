@@ -1,22 +1,18 @@
 <?php
-register_shutdown_function(function() {
-    print_r(error_get_last());
-});
 
-use App\Kernel;
-use Spiral\Goridge\SocketRelay;
 use Spiral\Goridge\StreamRelay;
 use Spiral\RoadrunnerDaemon\PSR7Client;
 use Spiral\RoadrunnerDaemon\Worker;
 use Symfony\Bridge\PsrHttpMessage\Factory\DiactorosFactory;
 use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
 use Symfony\Component\Debug\Debug;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
-require __DIR__ . '/../../../../config/bootstrap.php';
+require __DIR__ . '/../app/bootstrap.php.cache';
+require_once __DIR__.'/../app/AppKernel.php';
 
-$env   = $_SERVER['APP_ENV'] ?? $_ENV['APP_ENV'] ?? 'dev';
-$debug = (bool)($_SERVER['APP_DEBUG'] ?? $_ENV['APP_DEBUG'] ?? ('prod' !== $env));
+$env   = $_SERVER['APP_ENV'] ?? $_ENV['APP_ENV'] ?? 'prod';
+$debug = ('dev' === $env);
 
 if ($debug) {
     umask(0000);
@@ -24,33 +20,32 @@ if ($debug) {
     Debug::enable();
 }
 
-if ($trustedProxies = $_SERVER['TRUSTED_PROXIES'] ?? $_ENV['TRUSTED_PROXIES'] ?? false) {
-    Request::setTrustedProxies(explode(',', $trustedProxies), Request::HEADER_X_FORWARDED_ALL ^ Request::HEADER_X_FORWARDED_HOST);
-}
-
-if ($trustedHosts = $_SERVER['TRUSTED_HOSTS'] ?? $_ENV['TRUSTED_HOSTS'] ?? false) {
-    Request::setTrustedHosts(explode(',', $trustedHosts));
-}
-
-$kernel = new Kernel($env, $debug);
+$kernel = new AppKernel($env, $debug);
 $kernel->boot();
-$rebootKernelAfterRequest = in_array('--reboot-kernel-after-request', $argv);
-//$relay                    = new SocketRelay('/tmp/road-runner.sock', null, SocketRelay::SOCK_UNIX);
 $relay                    = new Spiral\Goridge\StreamRelay(STDIN, STDOUT);
 $psr7                     = new \Spiral\RoadRunner\PSR7Client(new \Spiral\RoadRunner\Worker($relay));
 $httpFoundationFactory    = new HttpFoundationFactory();
 $diactorosFactory         = new DiactorosFactory();
 
+$logger = $kernel->getContainer()->get('logger');
 while ($req = $psr7->acceptRequest()) {
     try {
-        $request  = $httpFoundationFactory->createRequest($req);
+        $request = $httpFoundationFactory->createRequest($req);
         $response = $kernel->handle($request);
-        $psr7->respond($diactorosFactory->createResponse($response));
-        $kernel->terminate($request, $response);
-        if($rebootKernelAfterRequest) {
-            $kernel->reboot(null);
-        }
+    } catch (\Raketman\RoadrunnerDaemon\Exceptions\CriticalException $e) {
+        $logger->error('worker-restart', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        $psr7->getWorker()->stop();
+        return;
     } catch (\Throwable $e) {
-        $psr7->getWorker()->error((string)$e);
+        $logger->error('worker-error', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        $response =  new \Symfony\Component\HttpFoundation\JsonResponse([
+            'error' => [
+                'type'      => 'server_error',
+                'message'   => Response::$statusTexts[Response::HTTP_INTERNAL_SERVER_ERROR]
+            ]
+        ], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
+
+    $psr7->respond($diactorosFactory->createResponse($response));
+    $kernel->terminate($request, $response);
 }
